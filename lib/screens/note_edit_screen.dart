@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shaimaa_notes/helper/note_provider.dart';
 import 'package:shaimaa_notes/models/note.dart';
@@ -11,6 +12,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 
 import 'note_view_screen.dart';
 
@@ -33,6 +36,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Note selectedNote;
   int id;
   int currentState  = 1;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
 
 
   @override
@@ -219,8 +227,31 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               FloatingActionButton(
                 backgroundColor: headerColor,
                   child: Icon(Icons.photo_camera),
-                  onPressed: () {
-                    getImage(ImageSource.camera);
+                  onPressed: ()  async{
+                    var status = await Permission.camera.status;
+                    if (status.isGranted) {
+                      getImage(ImageSource.camera);
+                    } else if (status.isDenied) {
+                      getImage(ImageSource.camera);
+                    } else {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) => CupertinoAlertDialog(
+                            title: Text('Camera Permission'),
+                            content: Text(
+                                'This app needs camera access to take pictures for upload user profile photo'),
+                            actions: <Widget>[
+                              CupertinoDialogAction(
+                                child: Text('Deny'),
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                              CupertinoDialogAction(
+                                child: Text('Settings'),
+                                onPressed: () => openAppSettings(),
+                              ),
+                            ],
+                          ));
+                    }
                   },
                 heroTag: null,
               ),
@@ -231,8 +262,32 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
               FloatingActionButton(
                 backgroundColor: headerColor,
                   child: Icon(Icons.insert_photo),
-                  onPressed: () {
-                    getImage(ImageSource.gallery);
+                  onPressed: () async {
+                   // getImage(ImageSource.gallery);
+                    var status = await Permission.photos.status;
+                    if (status.isGranted) {
+                      getImage(ImageSource.gallery);
+                    } else if (status.isDenied) {
+                      getImage(ImageSource.gallery);
+                    } else {
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) => CupertinoAlertDialog(
+                            title: Text('Gallery Permission'),
+                            content: Text(
+                                'This app needs gallery for upload photo'),
+                            actions: <Widget>[
+                              CupertinoDialogAction(
+                                child: Text('Deny'),
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                              CupertinoDialogAction(
+                                child: Text('Settings'),
+                                onPressed: () => openAppSettings(),
+                              ),
+                            ],
+                          ));
+                    }
                   },
                 heroTag: null,
               ),
@@ -269,6 +324,30 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       //   child: Icon(Icons.save),
       // ),
     );
+  }
+
+
+  void checkPermissions() async {
+
+    var status = await Permission.camera.status;
+    if(!status.isGranted){
+      var status = await Permission.photos.request();
+      if(status.isGranted){
+     //Do stuff according to this permission was rejected
+        var status = await Permission.storage.request();
+        if(status.isGranted){
+
+        }
+
+
+      }else{
+
+      }
+      }else{
+        //Do stuff according to this permission was rejected
+
+    }
+
   }
 
   getImage(ImageSource imageSource) async {
